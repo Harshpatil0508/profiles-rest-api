@@ -19,6 +19,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         }
     
     def create(self, validated_data):
+        # sourcery skip: inline-immediately-returned-variable
         """Create and return a new user"""
         user = UserProfile.objects.create_user(
             email=validated_data['email'],
