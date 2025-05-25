@@ -13,13 +13,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ('id', 'email', 'name', 'password')
         extra_kwargs = {
             'password': {
-                'write_only': True,
+                'write_only': True, 
                 'style': {'input_type': 'password'}
             }
         }
     
     def create(self, validated_data):
-        # sourcery skip: inline-immediately-returned-variable
         """Create and return a new user"""
         user = UserProfile.objects.create_user(
             email=validated_data['email'],
