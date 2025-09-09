@@ -38,10 +38,3 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 # Security best practices
 USER nobody:nobody
-```
-
-Note: This Dockerfile assumes that you have a `requirements.txt` file in your project directory and that your Django project's `manage.py` file is in the root of your project directory. 
-
-Also, note that using SQLite as a database in a container is not recommended for production environments as the data will be lost when the container is restarted or deleted. Consider using a more robust database solution like PostgreSQL or MySQL. 
-
-To use this Dockerfile, create a `requirements.txt` file with `Django` and other required packages, then run `docker build -t my-django-app .` to build the image, and `docker run -p 8000:8000 my-django-app` to start the container.
