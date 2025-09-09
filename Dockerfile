@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Collect static files
-RUN python manage.py collectstatic --no-input
+# RUN python manage.py collectstatic --no-input
 
 # Stage 2: Run the application
 FROM python:3.10-slim
