@@ -1,4 +1,4 @@
-# Stage 1: Build stage for Django application
+# Stage 1: Build Stage
 FROM python:3.10-slim as build-stage
 
 # Set working directory to /app
@@ -16,7 +16,7 @@ COPY . .
 # Collect static files
 RUN python manage.py collectstatic --no-input
 
-# Stage 2: Production stage for Django application
+# Stage 2: Production Stage
 FROM python:3.10-slim
 
 # Set working directory to /app
@@ -36,18 +36,11 @@ EXPOSE 8000
 # Run command to start Django development server
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
-# Security best practices
-# Run as non-root user
+# Security best practices:
+# - Use a non-root user to run the application
 RUN groupadd -r django && useradd -r -g django django
 USER django
 
-# Use SQLite database
-RUN apt update && apt install -y libsqlite3-dev
-RUN python -m pip install pysqlite3
-
-# Set working directory permissions
-RUN chown -R django:django /app
-
-# Health check for container
-HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
-  CMD curl --fail http://localhost:8000/ || exit 1
+# - Use a minimal base image to reduce attack surface
+# - Keep dependencies up-to-date to ensure latest security patches
+# - Avoid using pip with root privileges

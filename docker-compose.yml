@@ -1,5 +1,4 @@
 version: '3'
-
 services:
   backend:
     build: .
@@ -14,7 +13,7 @@ services:
       - DJANGO_SETTINGS_MODULE=project.settings
 
   db:
-    image: busybox
+    image: sqlite:latest
     volumes:
       - db-data:/db
 
