@@ -1,6 +1,6 @@
 version: '3'
 services:
-  backend:
+  django:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
@@ -13,9 +13,10 @@ services:
       - DJANGO_SETTINGS_MODULE=project.settings
 
   db:
-    image: sqlite:latest
+    image: python:3.9-slim
     volumes:
-      - db-data:/db
+      - db-data:/app/db
+    command: tail -f /dev/null
 
 volumes:
   db-data:

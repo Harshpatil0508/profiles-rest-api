@@ -17,17 +17,12 @@ pipeline {
                 sh 'docker push Harshpatil0508/profiles-rest-api'
             }
         }
-        stage('Deploy on AWS EC2') {
+        stage('Deploy to EC2') {
             steps {
                 sshagent (credentials: ['ec2-ssh-credentials']) {
-                    sh 'ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} "docker stop profiles-rest-api-container || true"'
-                    sh 'ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} "docker rm profiles-rest-api-container || true"'
-                    sh 'ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} "docker run -d --name profiles-rest-api-container Harshpatil0508/profiles-rest-api"'
+                    sh "ssh -o StrictHostKeyChecking=no ec2-user@15.206.166.81 'docker stop profiles-rest-api-container; docker rm profiles-rest-api-container; docker run -d --name profiles-rest-api-container Harshpatil0508/profiles-rest-api'"
                 }
             }
         }
-    }
-    environment {
-        EC2_HOST = 'your-ec2-host'
     }
 }
