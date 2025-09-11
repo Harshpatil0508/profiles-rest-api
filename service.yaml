@@ -1,1 +1,15 @@
-# service.yaml for Django application with SQLite
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-ecr-django-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: demo-ecr-django
