@@ -1,4 +1,7 @@
+**docker-compose.yml**
+```yml
 version: '3'
+
 services:
   django:
     build: .
@@ -13,10 +16,59 @@ services:
       - DJANGO_SETTINGS_MODULE=project.settings
 
   db:
-    image: python:3.9-slim
+    image: busybox
     volumes:
-      - db-data:/app/db
-    command: tail -f /dev/null
+      - db-data:/db
 
 volumes:
   db-data:
+```
+
+However, since SQLite is a file-based database, we don't need a separate service for it. We can simply use a volume to persist the data. Here's an updated version:
+
+**docker-compose.yml**
+```yml
+version: '3'
+
+services:
+  django:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - db-data:/app/db
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=project.settings
+
+volumes:
+  db-data:
+```
+
+In this example, we're building the Django image from the current directory (`.`). The `command` specifies the command to run when the container starts. We're mapping port 8000 on the host machine to port 8000 in the container, so you can access the Django development server at `http://localhost:8000`.
+
+The `volumes` section mounts the current directory (`.`) to `/app` in the container, so you can make changes to your code on the host machine and see them reflected in the container. We're also mounting a volume at `/app/db` to persist the SQLite database file.
+
+**Dockerfile**
+```dockerfile
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements file
+COPY requirements.txt .
+
+# Install the dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code
+COPY . .
+
+# Expose the port the application will run on
+EXPOSE 8000
+
+# Run the command to start the development server when the container launches
+CMD ["python", "manage.py", "runserver", "0.0.0.
