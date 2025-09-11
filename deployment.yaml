@@ -1,0 +1,126 @@
+Here's a production-ready Kubernetes deployment YAML for your Django application:
+
+```yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app
+        image: 026090548194.dkr.ecr.ap-south-1.amazonaws.com/my-app:latest
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: "myapp.settings"
+        - name: DATABASE_NAME
+          value: "myapp.db"
+        - name: DATABASE_USER
+          value: ""
+        - name: DATABASE_PASSWORD
+          value: ""
+        - name: DATABASE_HOST
+          value: ""
+        - name: DATABASE_PORT
+          value: "5432"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /healthcheck/
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /healthcheck/
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: my-app-persistent-storage
+          mountPath: /app/myapp.db
+      volumes:
+      - name: my-app-persistent-storage
+        persistentVolumeClaim:
+          claimName: my-app-pvc
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+```
+
+However, since you are using SQLite as your database, you will need to use a Persistent Volume Claim (PVC) to persist data across pod restarts. Here's an example PVC YAML:
+
+```yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-app-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+And you will also need to create a Persistent Volume (PV) to back the PVC. Here's an example PV YAML:
+
+```yml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-app-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - your-node-name
+  storageClassName: local-storage
+```
+
+Replace `your-node-name` with the name of the node where you want to store the data.
+
+Note: The above PV YAML is for a local PV. If you are using a cloud provider, you will need to use a different type of PV, such as an AWS EBS volume or a GCP Persistent Disk.
+
+Also, make sure to update the `DJANGO_SETTINGS_MODULE` environment variable to point to your Django project's settings module.
+
+To apply these YAML files, run the following commands:
+
+```bash
+kubectl apply -f my-app-pvc.yaml
+kubectl apply -f my-app-pv.yaml
+kubectl apply -f deployment.yaml
+```
+
+This will create the PVC, PV, and deployment in your Kubernetes cluster. You can then verify that the deployment is running by running:
+
+```bash
+kubectl get deployments
+kubectl get pods

@@ -1,52 +1,70 @@
-**Django with SQLite Dockerfile**
-=====================================
-
-Here's a production-ready Dockerfile for a Django application using SQLite as the database:
-
+**Django Production Dockerfile**
 ```dockerfile
-# Use an official Python image as the base
-FROM python:3.10-slim
+# Stage 1: Build
+FROM python:3.11-slim as build
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Copy the requirements file
+# Copy requirements file
 COPY requirements.txt .
 
-# Install the dependencies
+# Install production dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
+# Copy source code
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --no-input
+# Set environment variables for production
+ENV DJANGO_SETTINGS_MODULE=config.settings.production
+ENV PORT 8000
 
-# Expose the port the application will run on
+# Run migration commands for Django
+RUN python manage.py migrate --no-input
+
+# Stage 2: Final
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy compiled and installed dependencies from build stage
+COPY --from=build /app/ .
+
+# Expose correct port
 EXPOSE 8000
 
-# Run the command to start the development server when the container launches
+# Run command to start Django development server
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 ```
 
 **Explanation**
----------------
 
-1.  **Base Image**: The Dockerfile starts with the `python:3.10-slim` image, which is a lightweight version of the official Python image.
-2.  **Working Directory**: The `WORKDIR` instruction sets the working directory in the container to `/app`.
-3.  **Install Dependencies**: The `pip install` command installs the dependencies listed in `requirements.txt`.
-4.  **Copy Application Code**: The `COPY` instruction copies the application code into the container.
-5.  **Collect Static Files**: The `collectstatic` command collects static files from the application and its dependencies.
-6.  **Expose Port**: The `EXPOSE` instruction exposes port 8000, which is the default port for the Django development server.
-7.  **Run Command**: The `CMD` instruction sets the default command to run when the container launches, which starts the Django development server.
+This Dockerfile uses a multi-stage build process to separate the build and final stages. The build stage installs production dependencies, copies source code, sets environment variables, and runs migration commands. The final stage copies the compiled and installed dependencies from the build stage and sets up the environment to run the Django application.
+
+**Best Practices**
+
+*   We use a lightweight base image (`python:3.11-slim`) to reduce the image size.
+*   We use `--no-cache-dir` with `pip install` to prevent caching of dependencies.
+*   We use `COPY --from=build` to copy compiled and installed dependencies from the build stage, which helps to leverage Docker's caching mechanism.
+*   We set environment variables for production, such as `DJANGO_SETTINGS_MODULE` and `PORT`.
+*   We expose the correct port (`8000`) for the Django application.
+*   We use `RUN python manage.py migrate --no-input` to run migration commands automatically.
 
 **Example Use Case**
---------------------
 
-To use this Dockerfile, follow these steps:
+To build and run the Docker image, follow these steps:
 
-1.  Create a new directory for your project and navigate to it in your terminal.
-2.  Create a new file called `Dockerfile` and paste the above code into it.
-3.  Create a new file called `requirements.txt` and add the following line: `Django==4.1.7`
-4.  Run the command `docker build -t my-django-app .` to build the Docker image.
-5.  Run the command `docker run -p 8000:8000 my-django-app` to start the container and map port
+1.  Create a `requirements.txt` file in your project directory with the required dependencies.
+2.  Create a `config` directory with a `settings` directory inside, and a `production.py` file with your production settings.
+3.  Run the following command to build the Docker image:
+    ```bash
+docker build -t my-django-app .
+```
+4.  Run the following command to start a container from the image:
+    ```bash
+docker run -p 8000:8000 my-django-app
+```
+5.  Access your Django application at `http://localhost:8000`.
+
+Note: Make sure to replace `my-django-app` with your desired image name. Also, ensure that your `manage.py` file is in the root of your project directory.
