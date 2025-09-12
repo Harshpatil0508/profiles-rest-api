@@ -1,26 +1,16 @@
-FROM python:3.11-slim AS build
+# Stage 1: Build
+FROM python:3.12-slim as build
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y gcc default-libmysqlclient-dev build-essential pkg-config
 COPY requirements.txt .
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
-FROM python:3.11-slim
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Stage 2: Final image
+FROM python:3.12-slim
 WORKDIR /app
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    DJANGO_SETTINGS_MODULE=config.settings.production \
-    PORT=8000
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=build /app/wheels /wheels
-RUN pip install --no-cache /wheels/*
+COPY --from=build /app/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-RUN adduser --disabled-password --gecos "" django
-RUN chown -R django:django /app
-USER django
-RUN python manage.py migrate --noinput && \
-    python manage.py collectstatic --noinput
+RUN python manage.py migrate
 EXPOSE 8000
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "config.wsgi:application"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

@@ -1,55 +1,50 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-app1
-  labels:
-    app: my-app1
+  name: profiles-rest-api
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: my-app1
+      app: profiles-rest-api
+  template:
+    metadata:
+      labels:
+        app: profiles-rest-api
+    spec:
+      containers:
+      - name: profiles-rest-api
+        image: 026090548194.dkr.ecr.ap-south-1.amazonaws.com/profiles-rest-api:latest
+        env:
+        - name: DJANGO_SETTINGS_MODULE
+          value: "profiles_rest_api.settings"
+        - name: DB_ENGINE
+          value: "django.db.backends.sqlite3"
+        - name: DB_NAME
+          value: "db.sqlite3"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /api/health/
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /api/health/
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      imagePullSecrets:
+      - name: ecr-credentials
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
-  template:
-    metadata:
-      labels:
-        app: my-app1
-    spec:
-      containers:
-        image: 026090548194.dkr.ecr.ap-south-1.amazonaws.com/my-app1:latest
-        ports:
-        env:
-          value: "my_app1.settings"
-          value: "change-me-in-production"
-          value: "False"
-          value: "sqlite:///db.sqlite3"
-          value: "*"
-        resources:
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-          requests:
-            cpu: "200m"
-            memory: "256Mi"
-        livenessProbe:
-          httpGet:
-            path: /health/
-            port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-        readinessProbe:
-          httpGet:
-            path: /health/
-            port: 8000
-          initialDelaySeconds: 15
-          periodSeconds: 5
-          timeoutSeconds: 3
-        volumeMounts:
-          mountPath: /app/db
-      volumes:
-        emptyDir: {}
