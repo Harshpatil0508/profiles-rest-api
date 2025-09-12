@@ -1,16 +1,42 @@
-# Stage 1: Build
-FROM python:3.12-slim as build
+FROM python:3.12-slim as base
+
+RUN apt update && apt install -y gcc default-libmysqlclient-dev build-essential pkg-config
+
 WORKDIR /app
-RUN apt-get update && apt-get install -y gcc default-libmysqlclient-dev build-essential pkg-config
+
 COPY requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Stage 2: Final image
-FROM python:3.12-slim
-WORKDIR /app
-COPY --from=build /app/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-RUN python manage.py migrate
+
 EXPOSE 8000
+
+CMD ["python", "manage.py", "migrate", "--no-input"] && \
+    ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+
+# Optimized version with two stages for better caching
+FROM python:3.12-slim AS builder
+
+RUN apt update && apt install -y gcc default-libmysqlclient-dev build-essential pkg-config
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+RUN python manage.py migrate --no-input
+
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY --from=builder /app .
+
+EXPOSE 8000
+
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

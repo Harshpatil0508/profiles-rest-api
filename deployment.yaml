@@ -18,10 +18,18 @@ spec:
         env:
         - name: DJANGO_SETTINGS_MODULE
           value: "profiles_rest_api.settings"
-        - name: DB_ENGINE
-          value: "django.db.backends.sqlite3"
         - name: DB_NAME
-          value: "db.sqlite3"
+          value: "profiles.db"
+        - name: DB_USER
+          value: ""
+        - name: DB_PASSWORD
+          value: ""
+        - name: DB_HOST
+          value: "localhost"
+        - name: DB_PORT
+          value: "5432"
+        ports:
+        - containerPort: 8000
         resources:
           requests:
             cpu: 100m
@@ -31,18 +39,17 @@ spec:
             memory: 256Mi
         livenessProbe:
           httpGet:
-            path: /api/health/
+            path: /healthcheck/
             port: 8000
           initialDelaySeconds: 15
           periodSeconds: 15
         readinessProbe:
           httpGet:
-            path: /api/health/
+            path: /healthcheck/
             port: 8000
           initialDelaySeconds: 5
-          periodSeconds: 5
-      imagePullSecrets:
-      - name: ecr-credentials
+          periodSeconds: 10
+      restartPolicy: Always
   strategy:
     type: RollingUpdate
     rollingUpdate:

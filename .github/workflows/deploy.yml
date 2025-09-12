@@ -1,5 +1,4 @@
 Here's a production-ready GitHub Actions workflow for deploying the `profiles-rest-api` to an EKS cluster:
-
 ```yml
 # .github/workflows/deploy.yml
 
@@ -14,7 +13,7 @@ env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REPOSITORY: profiles-rest-api
   EKS_CLUSTER: profiles-rest-api-eks-cluster
-  IMAGE_TAG: latest
+  KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
 
 jobs:
   deploy:
@@ -36,13 +35,13 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-          ecr-registry: ${{ env.ECR_REPOSITORY }}
+          ecr-repository: ${{ env.ECR_REPOSITORY }}
 
       - name: Build and push Docker image
         run: |
-          docker build -t $ECR_REPOSITORY:latest .
-          docker tag $ECR_REPOSITORY:latest $ECR_REPOSITORY.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_REPOSITORY:latest
-          docker push $ECR_REPOSITORY.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_REPOSITORY:latest
+          docker build -t ${{ env.ECR_REPOSITORY }}:latest .
+          docker tag ${{ env.ECR_REPOSITORY }}:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+          docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
 
       - name: Configure kubectl
         uses: aws-actions/configure-eks-cluster@v1
@@ -59,21 +58,61 @@ jobs:
 
       - name: Verify deployment
         run: |
-          kubectl rollout status deployment profiles-rest-api -n default
+          kubectl rollout status deployment profiles-rest-api
 ```
+However, the above workflow is missing the `AWS_ACCOUNT_ID` which is required for pushing the Docker image to ECR. We can get the `AWS_ACCOUNT_ID` using the `aws sts get-caller-identity` command.
 
-**Explanation:**
+Here's the updated workflow:
+```yml
+# .github/workflows/deploy.yml
 
-1. The workflow is triggered on push events to the `main` branch.
-2. It checks out the code and configures AWS credentials using the `aws-actions/configure-aws-credentials` action.
-3. It logs in to the ECR repository using the `aws-actions/login-to-ecr` action.
-4. It builds and pushes the Docker image to the ECR repository.
-5. It configures `kubectl` to interact with the EKS cluster using the `aws-actions/configure-eks-cluster` action.
-6. It applies the deployment and service configurations using `kubectl apply`.
-7. It verifies the deployment rollout status using `kubectl rollout status`.
+name: Deploy to EKS
 
-**Note:**
+on:
+  push:
+    branches:
+      - main
 
-* Make sure to replace the `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` secrets with your actual AWS credentials and region.
-* Update the `ECR_REPOSITORY` and `EKS_CLUSTER` environment variables to match your ECR repository and EKS cluster names.
-* Ensure that the `deployment.yaml` and `service.yaml` files are in the root of your repository and contain the correct configurations for your application.
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: profiles-rest-api
+  EKS_CLUSTER: profiles-rest-api-eks-cluster
+  KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get AWS account ID
+        run: |
+          echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)" >> $GITHUB_ENV
+
+      - name: Login to ECR
+        uses: aws-actions/login-to-ecr@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          ecr-repository: ${{ env.ECR_REPOSITORY }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ env.ECR_REPOSITORY }}:latest .
+          docker tag ${{ env.ECR_REPOSITORY }}:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+          docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Configure kubectl
+        uses: aws-actions/configure-eks-cluster@v1
+        with:
+          cluster-name: ${{ env.EKS_CLUSTER }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY
