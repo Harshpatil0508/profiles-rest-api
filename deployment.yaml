@@ -49,7 +49,6 @@ spec:
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 10
-      restartPolicy: Always
   strategy:
     type: RollingUpdate
     rollingUpdate:
