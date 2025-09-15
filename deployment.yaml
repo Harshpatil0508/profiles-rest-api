@@ -49,7 +49,8 @@ spec:
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 5
-      restartPolicy: Always
+      imagePullSecrets:
+      - name: ecr-credentials
   strategy:
     type: RollingUpdate
     rollingUpdate:

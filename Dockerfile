@@ -5,12 +5,11 @@ RUN apt update && apt install -y gcc default-libmysqlclient-dev build-essential 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Stage 2: Runtime
+# Stage 2: Run
 FROM python:3.12-slim
 WORKDIR /app
 RUN apt update && apt install -y gcc default-libmysqlclient-dev build-essential pkg-config
-COPY --from=build /app/ .
+COPY --from=build /app/requirements.txt .
 COPY . .
 EXPOSE 8000
-CMD ["python", "manage.py", "migrate", "--no-input"]
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["python", "manage.py", "migrate", "--no-input"] && ["python", "manage.py", "runserver", "0.0.0.0:8000"]
