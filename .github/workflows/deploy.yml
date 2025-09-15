@@ -8,7 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
+
+    env:
       AWS_REGION: ap-south-1
       ECR_REPOSITORY: profiles-rest-api
       EKS_CLUSTER: profiles-rest-api-eks-cluster
@@ -25,17 +26,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Get AWS Account ID
+        id: aws
+        run: echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+
       - name: Login to ECR
-        uses: aws-actions/login-to-ecr@v1
+        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build Docker image
         run: |
-          docker build -t $ECR_REPOSITORY:latest .
-          docker tag $ECR_REPOSITORY:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Push Docker image to ECR
         run: |
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Configure kubectl
         uses: aws-actions/eks-configure-kubectl@v1
