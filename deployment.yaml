@@ -21,9 +21,9 @@ spec:
         - name: DB_NAME
           value: "profiles.db"
         - name: DB_USER
-          value: "user"
+          value: ""
         - name: DB_PASSWORD
-          value: "password"
+          value: ""
         - name: DB_HOST
           value: "localhost"
         - name: DB_PORT
@@ -39,17 +39,16 @@ spec:
             memory: 256Mi
         livenessProbe:
           httpGet:
-            path: /health/
+            path: /healthcheck/
             port: 8000
           initialDelaySeconds: 15
           periodSeconds: 15
         readinessProbe:
           httpGet:
-            path: /health/
+            path: /healthcheck/
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 5
-      restartPolicy: Always
   strategy:
     type: RollingUpdate
     rollingUpdate:
