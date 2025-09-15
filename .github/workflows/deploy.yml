@@ -1,9 +1,4 @@
-Here's a production-ready GitHub Actions workflow for deploying the `profiles-rest-api` to an EKS cluster:
-
-```yml
-# .github/workflows/deploy.yml
-
-name: Deploy to EKS
+name: CICD
 
 on:
   push:
@@ -14,9 +9,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      ECR_REPOSITORY: 'your-ecr-repository-name'
-      EKS_CLUSTER: 'profiles-rest-api-eks-cluster'
+      AWS_REGION: ap-south-1
+      ECR_REPOSITORY: profiles-rest-api
+      EKS_CLUSTER: profiles-rest-api-eks-cluster
+      IMAGE_TAG: latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -26,49 +23,27 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
         uses: aws-actions/login-to-ecr@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          ecr-registry: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest .
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+          docker build -t $ECR_REPOSITORY:latest .
+          docker tag $ECR_REPOSITORY:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
 
       - name: Configure kubectl
-        uses: aws-actions/configure-eks-cluster@v1
+        uses: aws-actions/eks-configure-kubectl@v1
         with:
           cluster-name: ${{ env.EKS_CLUSTER }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Apply deployment and service configurations
+      - name: Apply deployment and service YAML
         run: |
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
-        env:
-          ECR_IMAGE: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
-
-      - name: Verify deployment
-        run: |
-          kubectl rollout status deployment profiles-rest-api
-        env:
-          ECR_IMAGE: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
-```
-
-**Note:** 
-
-1. Replace `'your-ecr-repository-name'` with your actual ECR repository name.
-2. Make sure to store your AWS credentials as secrets in your GitHub repository settings.
-3. Ensure that the `deployment.yaml` and `service.yaml` files are in the root of your repository.
-4. The `ECR_IMAGE` environment variable is used to update the deployment configuration with the latest image.
-5. The `Verify deployment` step checks the rollout status of the deployment to ensure it's successful.
-
-This workflow will trigger on push events to the `main` branch, build and push the Docker image to ECR, and apply the deployment and service configurations to the EKS cluster. If any step fails, the workflow will fail fast and notify you.
