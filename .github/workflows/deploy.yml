@@ -35,12 +35,12 @@ jobs:
           docker push ${{ steps.login-ecr.outputs.registry-url }}/$ECR_REPOSITORY:latest
 
       - name: Configure kubectl
-        uses: aws-actions/configure-eks-kubectl@v1
+        uses: aws-actions/eks-configure-kubectl@v1
         with:
           cluster-name: ${{ env.EKS_CLUSTER }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Apply deployment and service
+      - name: Apply deployment and service YAML
         run: |
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
