@@ -6,7 +6,7 @@ WORKDIR /app
 # Install system packages needed for mysqlclient
 RUN apt update && apt install -y gcc default-libmysqlclient-dev build-essential pkg-config
 
-# Copy requirements file
+# Copy requirements.txt to install dependencies
 COPY requirements.txt .
 
 # Install Python dependencies
@@ -19,18 +19,8 @@ COPY . .
 EXPOSE 8000
 
 # Run Django migrations and start the development server
-CMD ["python", "manage.py", "migrate", "--no-input"] && \
-    ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["python", "manage.py", "migrate", "--no-input"] && ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
-
-# Optimized Dockerfile with multi-stage build
-FROM python:3.12-slim
-
-WORKDIR /app
-
-COPY --from=base /app/ /app/
-
-EXPOSE 8000
-
-CMD ["python", "manage.py", "migrate", "--no-input"] && \
-    ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# However the above command will not work because CMD can only have one command so we need to use a shell to run multiple commands
+# We will use the following command instead
+CMD ["sh", "-c", "python manage.py migrate --no-input && python manage.py runserver 0.0.0.0:8000"]

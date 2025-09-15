@@ -12,8 +12,6 @@ jobs:
       AWS_REGION: ap-south-1
       ECR_REPOSITORY: profiles-rest-api
       EKS_CLUSTER: profiles-rest-api-eks-cluster
-      IMAGE_TAG: latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -31,11 +29,11 @@ jobs:
       - name: Build and push Docker image
         run: |
           docker build -t $ECR_REPOSITORY:latest .
-          docker tag $ECR_REPOSITORY:latest ${{ steps.login-ecr.outputs.registry-url }}/$ECR_REPOSITORY:latest
-          docker push ${{ steps.login-ecr.outputs.registry-url }}/$ECR_REPOSITORY:latest
+          docker tag $ECR_REPOSITORY:latest $AWS_REGION.dkcr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+          docker push $AWS_REGION.dkcr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
 
       - name: Configure kubectl
-        uses: aws-actions/configure-eks-kubectl@v1
+        uses: aws-actions/configure-eks-cluster@v1
         with:
           cluster-name: ${{ env.EKS_CLUSTER }}
           aws-region: ${{ env.AWS_REGION }}
@@ -44,3 +42,13 @@ jobs:
         run: |
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
+        env:
+          EKS_CLUSTER: ${{ env.EKS_CLUSTER }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+
+      - name: Verify deployment
+        run: |
+          kubectl get deployments
+          kubectl get pods
+          kubectl get svc
