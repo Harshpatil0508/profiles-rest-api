@@ -18,15 +18,15 @@ spec:
         env:
         - name: DJANGO_SETTINGS_MODULE
           value: "profiles_rest_api.settings"
-        - name: DATABASE_NAME
+        - name: DB_NAME
           value: "profiles.db"
-        - name: DATABASE_USER
-          value: "user"
-        - name: DATABASE_PASSWORD
-          value: "password"
-        - name: DATABASE_HOST
+        - name: DB_USER
+          value: "profiles_user"
+        - name: DB_PASSWORD
+          value: "profiles_password"
+        - name: DB_HOST
           value: "localhost"
-        - name: DATABASE_PORT
+        - name: DB_PORT
           value: "5432"
         resources:
           requests:
@@ -37,15 +37,15 @@ spec:
             memory: 256Mi
         livenessProbe:
           httpGet:
-            path: /api/healthcheck
+            path: /healthcheck/
             port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 10
+          initialDelaySeconds: 15
+          periodSeconds: 15
         readinessProbe:
           httpGet:
-            path: /api/healthcheck
+            path: /healthcheck/
             port: 8000
-          initialDelaySeconds: 10
+          initialDelaySeconds: 5
           periodSeconds: 10
       restartPolicy: Always
   strategy:
