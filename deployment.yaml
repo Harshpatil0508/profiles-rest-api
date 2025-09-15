@@ -21,13 +21,15 @@ spec:
         - name: DB_NAME
           value: "profiles.db"
         - name: DB_USER
-          value: "profiles_user"
+          value: ""
         - name: DB_PASSWORD
-          value: "profiles_password"
+          value: ""
         - name: DB_HOST
           value: "localhost"
         - name: DB_PORT
           value: "5432"
+        ports:
+        - containerPort: 8000
         resources:
           requests:
             cpu: 100m
@@ -37,17 +39,16 @@ spec:
             memory: 256Mi
         livenessProbe:
           httpGet:
-            path: /api/healthcheck
+            path: /health/
             port: 8000
           initialDelaySeconds: 15
           periodSeconds: 15
         readinessProbe:
           httpGet:
-            path: /api/healthcheck
+            path: /health/
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 10
-      restartPolicy: Always
   strategy:
     type: RollingUpdate
     rollingUpdate:
