@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: profiles-rest-api-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: None
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: profiles-rest-api
+            port: 
+              number: 80
