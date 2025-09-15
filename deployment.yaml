@@ -28,8 +28,6 @@ spec:
           value: "localhost"
         - name: DATABASE_PORT
           value: "5432"
-        ports:
-        - containerPort: 8000
         resources:
           requests:
             cpu: 100m
@@ -39,15 +37,15 @@ spec:
             memory: 256Mi
         livenessProbe:
           httpGet:
-            path: /healthcheck/
+            path: /api/healthcheck
             port: 8000
-          initialDelaySeconds: 15
-          periodSeconds: 15
+          initialDelaySeconds: 10
+          periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /healthcheck/
+            path: /api/healthcheck
             port: 8000
-          initialDelaySeconds: 5
+          initialDelaySeconds: 10
           periodSeconds: 10
       restartPolicy: Always
   strategy:
