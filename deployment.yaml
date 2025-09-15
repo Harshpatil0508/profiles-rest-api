@@ -18,18 +18,16 @@ spec:
         env:
         - name: DJANGO_SETTINGS_MODULE
           value: "profiles_rest_api.settings"
-        - name: DATABASE_NAME
+        - name: DB_NAME
           value: "profiles.db"
-        - name: DATABASE_USER
-          value: "root"
-        - name: DATABASE_PASSWORD
-          value: "root"
-        - name: DATABASE_HOST
+        - name: DB_USER
+          value: "user"
+        - name: DB_PASSWORD
+          value: "password"
+        - name: DB_HOST
           value: "localhost"
-        - name: DATABASE_PORT
+        - name: DB_PORT
           value: "5432"
-        ports:
-        - containerPort: 8000
         resources:
           requests:
             cpu: 100m
@@ -39,16 +37,16 @@ spec:
             memory: 256Mi
         livenessProbe:
           httpGet:
-            path: /healthcheck/
+            path: /api/healthcheck
             port: 8000
-          initialDelaySeconds: 15
-          periodSeconds: 15
+          initialDelaySeconds: 10
+          periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /healthcheck/
+            path: /api/healthcheck
             port: 8000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          initialDelaySeconds: 10
+          periodSeconds: 10
       imagePullSecrets:
       - name: ecr-credentials
   strategy:

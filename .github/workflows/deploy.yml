@@ -28,16 +28,13 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t $ECR_REPOSITORY:latest .
-          docker tag $ECR_REPOSITORY:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
-        env:
-          AWS_ACCOUNT_ID: ${{ steps.login-ecr.outputs.account-id }}
-          AWS_REGION: ${{ env.AWS_REGION }}
-          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+          docker build -t ${ECR_REPOSITORY}:latest .
+          docker tag ${ECR_REPOSITORY}:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+          docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
 
       - name: Configure kubectl
-        uses: aws-actions/configure-eks-kubectl@v1
+        uses: aws-actions/configure-eks-cluster@v1
         with:
           cluster-name: ${{ env.EKS_CLUSTER }}
           aws-region: ${{ env.AWS_REGION }}
@@ -46,6 +43,3 @@ jobs:
         run: |
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
-        env:
-          EKS_CLUSTER: ${{ env.EKS_CLUSTER }}
-          AWS_REGION: ${{ env.AWS_REGION }}
