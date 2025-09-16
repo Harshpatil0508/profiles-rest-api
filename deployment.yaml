@@ -21,9 +21,9 @@ spec:
         - name: DB_NAME
           value: "profiles.db"
         - name: DB_USER
-          value: "profiles_user"
+          value: "root"
         - name: DB_PASSWORD
-          value: "profiles_password"
+          value: "root"
         - name: DB_HOST
           value: "localhost"
         - name: DB_PORT
