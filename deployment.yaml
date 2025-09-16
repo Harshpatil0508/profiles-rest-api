@@ -21,9 +21,9 @@ spec:
         - name: DB_NAME
           value: "profiles.db"
         - name: DB_USER
-          value: ""
+          value: "profiles"
         - name: DB_PASSWORD
-          value: ""
+          value: "profiles"
         - name: DB_HOST
           value: "localhost"
         - name: DB_PORT
@@ -39,16 +39,18 @@ spec:
             memory: 256Mi
         livenessProbe:
           httpGet:
-            path: /healthcheck/
+            path: /health/
             port: 8000
           initialDelaySeconds: 15
           periodSeconds: 15
         readinessProbe:
           httpGet:
-            path: /healthcheck/
+            path: /health/
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 5
+      imagePullSecrets:
+      - name: ecr-credentials
   strategy:
     type: RollingUpdate
     rollingUpdate:

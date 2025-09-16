@@ -12,6 +12,8 @@ jobs:
       AWS_REGION: ap-south-1
       ECR_REPOSITORY: profiles-rest-api
       EKS_CLUSTER: profiles-rest-api-eks-cluster
+      IMAGE_TAG: latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -25,37 +27,23 @@ jobs:
 
       - name: Login to ECR
         uses: aws-actions/login-to-ecr@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          ecr-repository: ${{ env.ECR_REPOSITORY }}
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         run: |
-          docker build -t ${{ env.ECR_REPOSITORY }}:latest .
-          docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.ECR_REPOSITORY }}:latest
-          docker push ${{ env.ECR_REPOSITORY }}:latest
+          docker build -t $ECR_REPOSITORY:latest .
+          docker tag $ECR_REPOSITORY:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
 
       - name: Configure kubectl
-        uses: aws-actions/configure-eks-kubectl@v1
+        uses: aws-actions/configure-eks-cluster@v1
         with:
           cluster-name: ${{ env.EKS_CLUSTER }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Apply deployment and service
         run: |
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
-        env:
-          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
-          EKS_CLUSTER: ${{ env.EKS_CLUSTER }}
-          AWS_REGION: ${{ env.AWS_REGION }}
-
-      - name: Verify deployment
-        run: |
-          kubectl get deployments
-          kubectl get pods
-          kubectl get svc
