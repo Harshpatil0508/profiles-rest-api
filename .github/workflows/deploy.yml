@@ -26,13 +26,17 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
-        uses: aws-actions/login-to-ecr@v1
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.ECR_REPOSITORY']].dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Build and push Docker image
         run: |
-          docker build -t $ECR_REPOSITORY:latest .
-          docker tag $ECR_REPOSITORY:latest ${{ env.AWS_REGION }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY:latest
-          docker push ${{ env.AWS_REGION }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY:latest
+          docker build -t ${{ env.ECR_REPOSITORY }}:latest .
+          docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.ECR_REPOSITORY']].dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+          docker push ${{ env.ECR_REPOSITORY]].dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
 
       - name: Configure kubectl
         uses: aws-actions/configure-eks-cluster@v1
@@ -40,7 +44,7 @@ jobs:
           cluster-name: ${{ env.EKS_CLUSTER }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Apply deployment and service
+      - name: Apply deployment and service YAML
         run: |
           kubectl apply -f deployment.yaml
           kubectl apply -f service.yaml
